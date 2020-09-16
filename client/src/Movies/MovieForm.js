@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 
 const initForm = {
   title: '',
@@ -10,15 +10,19 @@ const initForm = {
 }
 
 const MovieForm = props => {
+  const { movieList, setMovieList } = props;
   const { id } = useParams();
+  const history = useHistory();
   const [ form, setForm ] = useState(initForm);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/movies/${id}`)
-    .then(res => {
-      setForm(res.data)
-    })
-    .catch(err => console.log(err));
+    if(id) {
+      axios.get(`http://localhost:5000/api/movies/${id}`)
+      .then(res => {
+        setForm(res.data)
+      })
+      .catch(err => console.log(err));
+    }
   }, [id])
 
   const handleChange = e => {
@@ -33,17 +37,38 @@ const MovieForm = props => {
   const handleSubmit = e => {
     e.preventDefault();
     const cleanForm = {
+      id,
       title: form.title.trim(),
       director: form.director.trim(),
-      metascore: parseInt(form.metascore.trim()),
-      stars: [...form.stars]
+      metascore: parseInt(form.metascore),
+      stars: form.stars
     }
-    axios
-    .put(`http://localhost:5000/api/movies/${id}`, cleanForm)
-    .then(res => {
-      console.log(res.data)
-    })
-    .catch(err => console.log(err))
+
+    if(!Array.isArray(cleanForm.stars)) {
+      cleanForm.stars = cleanForm.stars.split(',');
+    }
+
+    if(id) {
+      axios
+      .put(`http://localhost:5000/api/movies/${id}`, cleanForm)
+      .then(res => {
+        const newList = movieList.filter(movie => {
+          if(movie.id !== cleanForm.id) {
+            return movie
+          }
+        });
+        setMovieList([cleanForm, ...newList])
+        history.push(`/movies/${id}`);
+      })
+      .catch(err => console.log(err))
+    } else {
+      axios
+      .post('http://localhost:5000/api/movies', cleanForm)
+      .then(res => {
+        console.log(res);
+      })
+      .catch(err => console.log(err));
+    }
   }
 
   return(
