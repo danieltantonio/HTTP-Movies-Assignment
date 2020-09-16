@@ -65,7 +65,8 @@ const MovieForm = props => {
       axios
       .post('http://localhost:5000/api/movies', cleanForm)
       .then(res => {
-        console.log(res);
+        setMovieList(res.data);
+        history.push('/');
       })
       .catch(err => console.log(err));
     }
